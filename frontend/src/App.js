@@ -1,24 +1,21 @@
 import logo from './logo.svg';
 import './App.css';
+import ParentComponent from './Components/ParentComponent';
+import { Callback } from './Components/Callback';
+import { BrowserRouter as Router, Routes, Route,Navigate } from 'react-router-dom';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      {/* <nav>
+        <a href="/">Home</a> | <a href="/about">About</a> | <a href="/tokenAcquire">Acquire Token</a>
+      </nav> */}
+      <Routes>
+        <Route path="/spotify-playlist-migration" element={<ParentComponent />} />
+        <Route path='/Redirect' element={<Callback />} />
+        <Route path="*" element={<Navigate to="/spotify-playlist-migration" />} />
+      </Routes>
+    </Router>
   );
 }
 
