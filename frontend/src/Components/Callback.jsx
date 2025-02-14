@@ -7,13 +7,15 @@ export function Callback() {
         const hash = window.location.search;
         const params = new URLSearchParams(hash);
         const token = params.get("code");
-        console.log(params);
-        
-        if (token) {
-            window.opener.postMessage({ token }, window.location.origin);
-            window.close(); // Close the tab
+
+        if (token && window.opener) {
+            console.log("Sending token:", token);
+            window.opener.postMessage({ token }, window.origin);
+            window.close();
         }
-    }, [])
+    }, []);
+
+
 
     return (
         <>

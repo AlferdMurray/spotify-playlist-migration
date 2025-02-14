@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { Accordion, Button, Form, Row, Col, Container } from "react-bootstrap";
+import { Accordion, Button, Form, Row, Col, Container, Table } from "react-bootstrap";
+import Spinner from 'react-bootstrap/Spinner';
 import "bootstrap/dist/css/bootstrap.min.css";
 import axios from 'axios'
 import { Buffer } from 'buffer'
+import { client } from "../client/client";
 
 const ParentComponent = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
+    const [loader, setLoader] = useState(false)
     const options = ["Option 1", "Option 2", "Option 3", "Option 4"];
-    
+    const [sourcePlaylistsData, setSourcePlaylistsData] = useState([])
     const handleSelectAll = () => {
         setSelectAll(!selectAll);
         setSelectedItems(selectAll ? [] : options);
@@ -27,46 +30,55 @@ const ParentComponent = () => {
     const clientSecret = process.env.REACT_APP_CLIENTSECRET
     const redirectUri = process.env.REACT_APP_REDIRECTURI
     const scopes = ['playlist-modify-public', 'playlist-modify-private', 'user-library-modify', 'user-library-read', 'user-read-playback-state', 'user-modify-playback-state', 'user-read-email']
-
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=code&redirect_uri=${redirectUri}&scope=${encodeURIComponent(scopes.join(' '))}&show_dialog=true`;
-    const queryParams = new URLSearchParams('')
-    // useEffect(() => {
-    //     if (queryParams.get('code')) {
-    //         let code = queryParams.get('code')
-    //         console.log(code);
-    //         setAuthorizationCode(code)
-    //         queryParams.delete('code')
-    //         // navigate(location.pathname + '?' + queryParams.toString(), { state: code })
-    //     }
-    // }, [])
 
-    async function handleAuthentication(type) {
+    const handleAuthentication = (e) => {
         try {
-            window.open(authUrl, "_blank", "width=600,height=700");
+            debugger
+            setLoader(true);
+            const authWindow = window.open(authUrl, "_blank", "width=600,height=700");
 
-            // Listen for messages from the new tab (callback)
             const handleMessage = async (event) => {
                 debugger
                 if (event.origin !== window.location.origin) return; // Security check
                 const { token } = event.data;
                 if (token) {
-                    // setToken(token);
-                    // console.log(token);
-                    window.localStorage.setItem(type + "Code", token);
-                    // setLoad(false)
-                    setAuthorizationCode({ ...authorizationCode, [type + 'Code']: token })
-                    // await getAccessToken(type, token)
+                    await getAccessToken(token, e.target.name)
+                    window.removeEventListener("message", handleMessage); // Remove listener after first use
                 }
+                setLoader(false);
             };
 
-            window.addEventListener("message", handleMessage, false);
+            window.addEventListener("message", handleMessage);
         } catch (error) {
             console.log(error);
         }
+    };
+
+
+    async function getUserPlaylists() {
+        try {
+            setLoader(true)
+            debugger
+            let config = {
+                method: 'post',
+                url: 'http://localhost:8080/getUserPlaylists',
+                data: {
+                    sourceRefreshToken : authorizationCode.sourceCode,
+                    targetRefreshToken : authorizationCode.targetCode
+                }
+            }
+            console.log(JSON.stringify(config));
+            
+            // let result = await client(config)
+            // console.log(result.data);
+            setLoader(false)
+        } catch (error) {
+
+        }
     }
 
-
-    async function getAccessToken(type, code) {
+    async function getAccessToken(code, type) {
         try {
             debugger
             const body = new URLSearchParams();
@@ -92,17 +104,13 @@ const ParentComponent = () => {
                     }
                 })
                 if (response1.status == 200) {
-                    // setTokenVerification({ ...tokenVerification, [type + 'token']: true })
-                    localStorage.setItem(type + 'token', response.data.refresh_token)
-                }
-                else {
-                    localStorage.removeItem(type + 'token')
+                    localStorage.setItem(type + 'Code', response.data.refresh_token)
+                    setAuthorizationCode({ ...authorizationCode, [type + 'Code']: response.data.refresh_token });
                 }
             }
 
         } catch (error) {
             console.error("Error fetching access token:", error);
-            localStorage.removeItem(type + 'token')
         }
     }
 
@@ -115,7 +123,7 @@ const ParentComponent = () => {
                     <Accordion.Item eventKey="0">
                         <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Spotify Authentication</Accordion.Header>
                         <Accordion.Body>
-                            <Button onClick={() => { handleAuthentication("source") }} variant="success">Authenticate with Spotify</Button>
+                            <Button name="source" onClick={(e) => { handleAuthentication(e) }} variant="success">Authenticate with Spotify</Button>
                             <span hidden={!authorizationCode.sourceCode}>
                                 <img style={{ marginLeft: '10px' }} width={30} src="./success-icon.png" />
                                 <span style={{ marginLeft: '10px' }} className="text-success">Successfully Verified</span>
@@ -127,7 +135,7 @@ const ParentComponent = () => {
                     <Accordion.Item eventKey="1">
                         <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Another Spotify Auth</Accordion.Header>
                         <Accordion.Body>
-                            <Button onClick={() => { handleAuthentication("target") }} variant="success">Authenticate with Spotify</Button>
+                            <Button name="target" onClick={(e) => { handleAuthentication(e) }} variant="success">Authenticate with Spotify</Button>
                             <span hidden={!authorizationCode.targetCode}>
                                 <img style={{ marginLeft: '10px' }} width={30} src="./success-icon.png" />
                                 <span style={{ marginLeft: '10px' }} className="text-success">Successfully Verified</span>
@@ -138,26 +146,41 @@ const ParentComponent = () => {
                     <Accordion.Item eventKey="2" hidden={!authorizationCode.sourceCode && !authorizationCode.targetCode}>
                         <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Grid with Select Options</Accordion.Header>
                         <Accordion.Body>
-                            <Row className="g-3">
-                                <Col md={4} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
-                                    <Form.Check
-                                        type="checkbox"
-                                        label="Select All"
-                                        checked={selectAll}
-                                        onChange={handleSelectAll}
-                                    />
-                                    {options.map((option) => (
+                            <Row className="g-3" style={{ maxHeight: "650px" }}>
+                                <Row className="g-3">
+                                    <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
                                         <Form.Check
-                                            key={option}
                                             type="checkbox"
-                                            label={option}
-                                            checked={selectedItems.includes(option)}
-                                            onChange={() => handleSelect(option)}
+                                            // label="Select All"
+                                            className="p-2"
+                                            checked={selectAll}
+                                            onChange={handleSelectAll}
                                         />
-                                    ))}
-                                </Col>
-                                <Col md={4} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Column 2</Col>
-                                <Col md={4} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Column 3</Col>
+                                    </Col>
+                                    <Col md={11} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Source Playlist</Col>
+                                </Row>
+                                {sourcePlaylistsData.length != 0 ?
+                                    <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
+                                        <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
+                                            <Form.Check
+                                                type="checkbox"
+                                                // label="Select All"
+                                                className="p-2"
+                                                checked={selectAll}
+                                                onChange={handleSelectAll}
+                                            />
+                                        </Col>
+                                        <Col md={11} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Source Playlist</Col>
+                                    </Row> :
+                                    <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
+                                        <div className="text-center" style={{ backgroundColor: "#121212" }}>
+                                            <div className="mb-3" style={{ color: "#1DB954", }}><span style={{ width: '200px' }}>No Playlists to Show. Please Press the "Get My Playlists" button to reveal your playlists</span></div>
+                                            <Button onClick={() => { getUserPlaylists() }} className="mb-3" variant="success">Get My Playlists</Button>
+                                        </div>
+                                    </Row>
+                                }
+
+                                {/* <Col md={5} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Target Playlists</Col> */}
                             </Row>
                         </Accordion.Body>
                     </Accordion.Item>
@@ -174,7 +197,10 @@ const ParentComponent = () => {
                     </Accordion.Item>
                 </Accordion>
             </Container>
-        </div>
+            {loader && <div className="overlay">
+                <Spinner animation='grow' variant="success" />
+            </div>}
+        </div >
     );
 };
 
