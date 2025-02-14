@@ -7,9 +7,8 @@ import { Buffer } from 'buffer'
 const ParentComponent = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
-    const [tokenVerification, setTokenVerification] = useState({ source: localStorage.getItem('sourceToken') || false, target: localStorage.getItem('targetToken') })
     const options = ["Option 1", "Option 2", "Option 3", "Option 4"];
-
+    
     const handleSelectAll = () => {
         setSelectAll(!selectAll);
         setSelectedItems(selectAll ? [] : options);
@@ -23,7 +22,7 @@ const ParentComponent = () => {
 
 
 
-    const [authorizationCode, setAuthorizationCode] = useState('')
+    const [authorizationCode, setAuthorizationCode] = useState({ sourceCode: localStorage.getItem('sourceCode'), targetCode: localStorage.getItem('targetCode') })
     const clientId = process.env.REACT_APP_CLIENTID
     const clientSecret = process.env.REACT_APP_CLIENTSECRET
     const redirectUri = process.env.REACT_APP_REDIRECTURI
@@ -41,21 +40,22 @@ const ParentComponent = () => {
     //     }
     // }, [])
 
-    function handleAuthentication(type) {
+    async function handleAuthentication(type) {
         try {
             window.open(authUrl, "_blank", "width=600,height=700");
 
             // Listen for messages from the new tab (callback)
-            const handleMessage = async(event) => {
+            const handleMessage = async (event) => {
                 debugger
                 if (event.origin !== window.location.origin) return; // Security check
                 const { token } = event.data;
                 if (token) {
                     // setToken(token);
                     // console.log(token);
-                    // window.localStorage.setItem(type + "Token", token);
+                    window.localStorage.setItem(type + "Code", token);
                     // setLoad(false)
-                    await getAccessToken(type, token)
+                    setAuthorizationCode({ ...authorizationCode, [type + 'Code']: token })
+                    // await getAccessToken(type, token)
                 }
             };
 
@@ -91,27 +91,14 @@ const ParentComponent = () => {
                         Authorization: 'Bearer ' + response.data.access_token
                     }
                 })
-                if (response1.data.statusCode == 200) {
-                    setTokenVerification({ ...tokenVerification, [type + 'token']: true })
+                if (response1.status == 200) {
+                    // setTokenVerification({ ...tokenVerification, [type + 'token']: true })
                     localStorage.setItem(type + 'token', response.data.refresh_token)
                 }
                 else {
                     localStorage.removeItem(type + 'token')
                 }
             }
-
-            // then((response) => {
-            //     // Response contains the access token
-            //     console.log("Access Token:", response.data.access_token);
-            //     .then((response1) => {
-
-            //     })
-            // console.log("Refresh Token:", response.data.refresh_token);
-            // console.log("Expires In:", response.data.expires_in);
-            // }).catch ((error) => {
-            // console.log(error);
-            // })
-
 
         } catch (error) {
             console.error("Error fetching access token:", error);
@@ -129,10 +116,11 @@ const ParentComponent = () => {
                         <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Spotify Authentication</Accordion.Header>
                         <Accordion.Body>
                             <Button onClick={() => { handleAuthentication("source") }} variant="success">Authenticate with Spotify</Button>
-                            <span hidden={!tokenVerification.source}>
+                            <span hidden={!authorizationCode.sourceCode}>
                                 <img style={{ marginLeft: '10px' }} width={30} src="./success-icon.png" />
                                 <span style={{ marginLeft: '10px' }} className="text-success">Successfully Verified</span>
                             </span>
+                            {/* <button onClick={() => { getAccessToken('source',authorizationCode.sourceCode) }}>GEn token</button> */}
                         </Accordion.Body>
                     </Accordion.Item>
 
@@ -140,14 +128,14 @@ const ParentComponent = () => {
                         <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Another Spotify Auth</Accordion.Header>
                         <Accordion.Body>
                             <Button onClick={() => { handleAuthentication("target") }} variant="success">Authenticate with Spotify</Button>
-                            <span hidden={!tokenVerification.target}>
+                            <span hidden={!authorizationCode.targetCode}>
                                 <img style={{ marginLeft: '10px' }} width={30} src="./success-icon.png" />
                                 <span style={{ marginLeft: '10px' }} className="text-success">Successfully Verified</span>
                             </span>
                         </Accordion.Body>
                     </Accordion.Item>
 
-                    <Accordion.Item eventKey="2">
+                    <Accordion.Item eventKey="2" hidden={!authorizationCode.sourceCode && !authorizationCode.targetCode}>
                         <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Grid with Select Options</Accordion.Header>
                         <Accordion.Body>
                             <Row className="g-3">
@@ -174,7 +162,7 @@ const ParentComponent = () => {
                         </Accordion.Body>
                     </Accordion.Item>
 
-                    <Accordion.Item eventKey="3">
+                    <Accordion.Item eventKey="3" aria-disabled={!authorizationCode.sourceCode && !authorizationCode.targetCode}>
                         <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Grid without Select Options</Accordion.Header>
                         <Accordion.Body>
                             <Row className="g-3">
