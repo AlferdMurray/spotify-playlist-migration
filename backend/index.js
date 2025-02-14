@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = 8080;
 require('dotenv').config();
-const {getUserPlaylists} = require('../backend/Business Logics/spotify-playlist-BL')
+const {getUserPlaylists} = require('../backend/Business Logics/spotify-playlist-BL').default
 
 const corsOptions = {
     origin: 'http://localhost:3000', // Restrict allowed origins
