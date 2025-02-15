@@ -10,6 +10,7 @@ const ParentComponent = () => {
     const [selectAll, setSelectAll] = useState(false);
     const [selectedItems, setSelectedItems] = useState([]);
     const [loader, setLoader] = useState(false)
+    // const [playlists,setPlaylists] = useState([])
     const options = ["Option 1", "Option 2", "Option 3", "Option 4"];
     const [sourcePlaylistsData, setSourcePlaylistsData] = useState([])
     const handleSelectAll = () => {
@@ -64,14 +65,15 @@ const ParentComponent = () => {
                 method: 'post',
                 url: 'http://localhost:8080/getUserPlaylists',
                 data: {
-                    sourceRefreshToken : authorizationCode.sourceCode,
-                    targetRefreshToken : authorizationCode.targetCode
+                    sourceRefreshToken: authorizationCode.sourceCode,
+                    targetRefreshToken: authorizationCode.targetCode
                 }
             }
             console.log(JSON.stringify(config));
-            
-            // let result = await client(config)
-            // console.log(result.data);
+
+            let result = await client(config)
+            console.log(result.data);
+            setSourcePlaylistsData(result.data)
             setLoader(false)
         } catch (error) {
 
@@ -157,21 +159,28 @@ const ParentComponent = () => {
                                             onChange={handleSelectAll}
                                         />
                                     </Col>
-                                    <Col md={11} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Source Playlist</Col>
+                                    <Col md={9} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Source Playlist</Col>
+                                    <Col md={2} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Count</Col>
                                 </Row>
                                 {sourcePlaylistsData.length != 0 ?
                                     <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
-                                        <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
-                                            <Form.Check
-                                                type="checkbox"
-                                                // label="Select All"
-                                                className="p-2"
-                                                checked={selectAll}
-                                                onChange={handleSelectAll}
-                                            />
-                                        </Col>
-                                        <Col md={11} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Source Playlist</Col>
-                                    </Row> :
+                                          {sourcePlaylistsData.map((playlist) => (
+                                            <>
+                                                <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
+                                                    <Form.Check
+                                                        type="checkbox"
+                                                        // label="Select All"
+                                                        className="p-2"
+                                                        // checked={selectAll}
+                                                        onChange={handleSelectAll}
+                                                    />
+                                                </Col>
+                                                <Col md={9} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>{playlist.name}</Col>
+                                                <Col md={2} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>{playlist.trackCount}</Col>
+                                            </>
+                                        ))}
+                                    </Row>
+                                    :
                                     <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
                                         <div className="text-center" style={{ backgroundColor: "#121212" }}>
                                             <div className="mb-3" style={{ color: "#1DB954", }}><span style={{ width: '200px' }}>No Playlists to Show. Please Press the "Get My Playlists" button to reveal your playlists</span></div>
@@ -179,7 +188,7 @@ const ParentComponent = () => {
                                         </div>
                                     </Row>
                                 }
-
+                                <Button variant="success" style={{width : '150px', float : 'right'}}>Copy Playlist</Button>
                                 {/* <Col md={5} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Target Playlists</Col> */}
                             </Row>
                         </Accordion.Body>

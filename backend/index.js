@@ -3,7 +3,7 @@ const cors = require('cors');
 const app = express();
 const port = 8080;
 require('dotenv').config();
-const {getUserPlaylists} = require('../backend/Business Logics/spotify-playlist-BL').default
+const {getUserPlaylists, migrateUserPlaylists, removeLikedSongs, deletePlaylist} = require('../backend/Business Logics/spotify-playlist-BL').default
 
 const corsOptions = {
     origin: 'http://localhost:3000', // Restrict allowed origins
@@ -15,8 +15,9 @@ app.use(express.json());
 app.use(cors(corsOptions));
 
 app.post("/getUserPlaylists", getUserPlaylists);
-
-
+app.post("/migrateUserPlaylists",migrateUserPlaylists)
+app.post('/removeLikedSongs',removeLikedSongs)
+app.post('/deletePlaylist',deletePlaylist)
 
 app.listen(port, (err) => {
     if (err) {
