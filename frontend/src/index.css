@@ -24,3 +24,12 @@ code {
   justify-content: center;
   z-index: 1050; /* High z-index to keep it on top */
 }
+
+.accordion-button{
+  background-color: #1abc54 !important;
+  font-weight: bold;
+  border-color: black !important;
+  /* color: white !important; */
+}
+
+/* 33,37,41 */

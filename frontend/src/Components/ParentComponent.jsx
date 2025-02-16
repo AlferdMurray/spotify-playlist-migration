@@ -11,16 +11,16 @@ const ParentComponent = () => {
     const [selectedItems, setSelectedItems] = useState([]);
     const [loader, setLoader] = useState(false)
     // const [playlists,setPlaylists] = useState([])
-    const options = ["Option 1", "Option 2", "Option 3", "Option 4"];
     const [sourcePlaylistsData, setSourcePlaylistsData] = useState([])
     const handleSelectAll = () => {
         setSelectAll(!selectAll);
-        setSelectedItems(selectAll ? [] : options);
+        setSelectedItems(selectAll ? [] : sourcePlaylistsData);
+
     };
 
-    const handleSelect = (option) => {
+    const handleSelect = (playlist) => {
         setSelectedItems((prev) =>
-            prev.includes(option) ? prev.filter((item) => item !== option) : [...prev, option]
+            prev.find((item)=>item.id == playlist.id) ? prev.filter((item) => item.id == playlist.id) : [...prev, playlist]
         );
     };
 
@@ -69,14 +69,11 @@ const ParentComponent = () => {
                     targetRefreshToken: authorizationCode.targetCode
                 }
             }
-            console.log(JSON.stringify(config));
-
             let result = await client(config)
-            console.log(result.data);
             setSourcePlaylistsData(result.data)
             setLoader(false)
         } catch (error) {
-
+            console.log(error);
         }
     }
 
@@ -116,27 +113,48 @@ const ParentComponent = () => {
         }
     }
 
+    const copyPlaylist = async () => {
+        try {
+            debugger
+            setLoader(true)
+            // let payloadData = selectedItems.map((id) => ({ id }))
+            let config = {
+                method: 'post',
+                url: 'http://localhost:8080/migrateUserPlaylists',
+                data: {
+                    playlists: selectedItems,
+                    sourceRefreshToken: authorizationCode.sourceCode,
+                    targetRefreshToken: authorizationCode.targetCode
+                }
+            }
+            await axios(config)
+            setLoader(false)
+            window.location.href = 'https://open.spotify.com'
+        } catch (error) {
+            setLoader(false)
+            console.log(error);
+        }
+    }
 
     return (
         <div style={{ backgroundColor: 'black' }}>
             <Container className="bg-dark text-light p-4" style={{ minHeight: "100vh" }}>
-                <h2 className="text-center text-success mb-4">Spotify Playlists Migration</h2>
+                <h2 style={{color:'#1abc54'}} className="text-center mb-4"><img src="https://www.freepnglogos.com/uploads/spotify-logo-png/spotify-download-logo-30.png" width={"25px"}/> Spotify Playlists Migration</h2>
                 <Accordion defaultActiveKey="0">
-                    <Accordion.Item eventKey="0">
-                        <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Spotify Authentication</Accordion.Header>
+                    <Accordion.Item style={{ backgroundColor: 'black' }} eventKey="0">
+                        <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Spotify Source User Authentication</Accordion.Header>
                         <Accordion.Body>
                             <Button name="source" onClick={(e) => { handleAuthentication(e) }} variant="success">Authenticate with Spotify</Button>
                             <span hidden={!authorizationCode.sourceCode}>
                                 <img style={{ marginLeft: '10px' }} width={30} src="./success-icon.png" />
                                 <span style={{ marginLeft: '10px' }} className="text-success">Successfully Verified</span>
                             </span>
-                            {/* <button onClick={() => { getAccessToken('source',authorizationCode.sourceCode) }}>GEn token</button> */}
                         </Accordion.Body>
                     </Accordion.Item>
 
                     <Accordion.Item eventKey="1">
-                        <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Another Spotify Auth</Accordion.Header>
-                        <Accordion.Body>
+                        <Accordion.Header style={{ backgroundColor: "Black", color: "#121212" }}>Spotify Target User Authentication</Accordion.Header>
+                        <Accordion.Body style={{ backgroundColor: 'black' }}>
                             <Button name="target" onClick={(e) => { handleAuthentication(e) }} variant="success">Authenticate with Spotify</Button>
                             <span hidden={!authorizationCode.targetCode}>
                                 <img style={{ marginLeft: '10px' }} width={30} src="./success-icon.png" />
@@ -145,64 +163,57 @@ const ParentComponent = () => {
                         </Accordion.Body>
                     </Accordion.Item>
 
-                    <Accordion.Item eventKey="2" hidden={!authorizationCode.sourceCode && !authorizationCode.targetCode}>
-                        <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Grid with Select Options</Accordion.Header>
-                        <Accordion.Body>
-                            <Row className="g-3" style={{ maxHeight: "650px" }}>
-                                <Row className="g-3">
-                                    <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
-                                        <Form.Check
-                                            type="checkbox"
-                                            // label="Select All"
-                                            className="p-2"
-                                            checked={selectAll}
-                                            onChange={handleSelectAll}
-                                        />
-                                    </Col>
-                                    <Col md={9} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Source Playlist</Col>
-                                    <Col md={2} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Count</Col>
+                    <Accordion.Item eventKey="2">
+                        <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Playlists Migration</Accordion.Header>
+                        {authorizationCode.sourceCode && authorizationCode.targetCode ?
+                            <Accordion.Body style={{ backgroundColor: 'black' }}>
+                                <Row className="g-3" style={{ maxHeight: "650px" }}>
+                                    <Row className="g-3">
+                                        <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
+                                            <Form.Check
+                                                type="checkbox"
+                                                // label="Select All"
+                                                className="p-2"
+                                                checked={selectAll && (selectedItems.length == sourcePlaylistsData.length)}
+                                                onChange={handleSelectAll}
+                                            />
+                                        </Col>
+                                        <Col md={9} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Source Playlist</Col>
+                                        <Col md={2} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954", fontWeight: 'bold' }}>Count</Col>
+                                    </Row>
+                                    {sourcePlaylistsData.length != 0 ?
+                                        <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
+                                            {sourcePlaylistsData.map((playlist) => (
+                                                <>
+                                                    <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
+                                                        <Form.Check
+                                                            type="checkbox"
+                                                            // label="Select All"
+                                                            className="p-2"
+                                                            checked={selectedItems.some((item)=>item.id == playlist.id)}
+                                                            onChange={() => { handleSelect(playlist) }}
+                                                        />
+                                                    </Col>
+                                                    <Col md={9} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>{playlist.name}</Col>
+                                                    <Col md={2} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>{playlist.trackCount}</Col>
+                                                </>
+                                            ))}
+                                        </Row>
+                                        :
+                                        <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
+                                            <div className="text-center" style={{ backgroundColor: "#121212" }}>
+                                                <div className="mb-3" style={{ color: "#1DB954", }}><span style={{ width: '200px' }}>No Playlists to Show. Please Press the "Get My Playlists" button to reveal your playlists</span></div>
+                                                <Button onClick={() => { getUserPlaylists() }} className="mb-3" variant="success">Get My Playlists</Button>
+                                            </div>
+                                        </Row>
+                                    }
+                                    <Button disabled={selectedItems.length==0} onClick={copyPlaylist} variant="success" style={{ width: '150px', float: 'right' }}>Copy Playlist</Button>
                                 </Row>
-                                {sourcePlaylistsData.length != 0 ?
-                                    <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
-                                          {sourcePlaylistsData.map((playlist) => (
-                                            <>
-                                                <Col md={1} style={{ maxHeight: "150px", overflowY: "auto", backgroundColor: "#121212", color: "#1DB954", padding: "10px" }}>
-                                                    <Form.Check
-                                                        type="checkbox"
-                                                        // label="Select All"
-                                                        className="p-2"
-                                                        // checked={selectAll}
-                                                        onChange={handleSelectAll}
-                                                    />
-                                                </Col>
-                                                <Col md={9} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>{playlist.name}</Col>
-                                                <Col md={2} className="p-3 text-center align-items-center" style={{ backgroundColor: "#121212", color: "#1DB954" }}>{playlist.trackCount}</Col>
-                                            </>
-                                        ))}
-                                    </Row>
-                                    :
-                                    <Row className="g-3" style={{ "--bs-gutter-y": "0rem" }}>
-                                        <div className="text-center" style={{ backgroundColor: "#121212" }}>
-                                            <div className="mb-3" style={{ color: "#1DB954", }}><span style={{ width: '200px' }}>No Playlists to Show. Please Press the "Get My Playlists" button to reveal your playlists</span></div>
-                                            <Button onClick={() => { getUserPlaylists() }} className="mb-3" variant="success">Get My Playlists</Button>
-                                        </div>
-                                    </Row>
-                                }
-                                <Button variant="success" style={{width : '150px', float : 'right'}}>Copy Playlist</Button>
-                                {/* <Col md={5} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Target Playlists</Col> */}
-                            </Row>
-                        </Accordion.Body>
-                    </Accordion.Item>
-
-                    <Accordion.Item eventKey="3" aria-disabled={!authorizationCode.sourceCode && !authorizationCode.targetCode}>
-                        <Accordion.Header style={{ backgroundColor: "#1DB954", color: "#121212" }}>Grid without Select Options</Accordion.Header>
-                        <Accordion.Body>
-                            <Row className="g-3">
-                                <Col md={4} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Column 1</Col>
-                                <Col md={4} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Column 2</Col>
-                                <Col md={4} className="p-3" style={{ backgroundColor: "#121212", color: "#1DB954" }}>Column 3</Col>
-                            </Row>
-                        </Accordion.Body>
+                            </Accordion.Body>
+                            :
+                            <Accordion.Body style={{backgroundColor : 'black'}} >
+                                <div className="text-center text-danger">*First Verify and Come</div>
+                            </Accordion.Body>}
                     </Accordion.Item>
                 </Accordion>
             </Container>

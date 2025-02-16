@@ -2,7 +2,6 @@ import qs from 'qs'
 import axios from 'axios'
 async function getUserPlaylists(req, res) {
     try {
-        console.log("Inside here", req.body);
         let token = await generateToken(req.body.sourceRefreshToken)
         let config = {
             method: "GET",
