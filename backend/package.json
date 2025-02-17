@@ -4,6 +4,7 @@
   "description": "This is the backend for playlists migration",
   "main": "index.js",
   "scripts": {
+    "build": "echo 'No build step needed for backend'",
     "start": "nodemon index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
