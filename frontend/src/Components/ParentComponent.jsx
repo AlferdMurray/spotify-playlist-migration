@@ -63,7 +63,7 @@ const ParentComponent = () => {
             debugger
             let config = {
                 method: 'post',
-                url: 'http://localhost:8080/getUserPlaylists',
+                url: 'https://spotify-playlist-migration.onrender.com/getUserPlaylists',
                 data: {
                     sourceRefreshToken: authorizationCode.sourceCode,
                     targetRefreshToken: authorizationCode.targetCode
@@ -120,7 +120,7 @@ const ParentComponent = () => {
             // let payloadData = selectedItems.map((id) => ({ id }))
             let config = {
                 method: 'post',
-                url: 'http://localhost:8080/migrateUserPlaylists',
+                url: 'https://spotify-playlist-migration.onrender.com/migrateUserPlaylists',
                 data: {
                     playlists: selectedItems,
                     sourceRefreshToken: authorizationCode.sourceCode,
