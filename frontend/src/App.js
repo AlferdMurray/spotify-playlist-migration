@@ -2,7 +2,7 @@ import logo from './logo.svg';
 import './App.css';
 import ParentComponent from './Components/ParentComponent';
 import { Callback } from './Components/Callback';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route,Navigate } from 'react-router-dom';
 
 function App() {
   return (
